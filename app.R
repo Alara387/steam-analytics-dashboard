@@ -1,5 +1,5 @@
 install.packages(c("shiny", "shinydashboard", "ggplot2", "plotly", "DT", "dplyr", "readr"))
-path <- "E:/PUT-AI/R PROGRAMMING/RStudio/R folder"
+path <- "."
 
 library(shiny)
 library(shinydashboard)
@@ -10,7 +10,7 @@ library(dplyr)
 library(readr)
 
 # Load data
-steam <- read_csv("E:/PUT-AI/R PROGRAMMING/RStudio/R folder/steam.csv")
+steam <- read_csv("steam.csv")
 
 # Clean data
 steam <- steam %>%
