@@ -6,10 +6,10 @@ library(DT)
 library(dplyr)
 library(readr)
 
-# Load data
+# we load the Steam dataset here
 steam <- read_csv("steam.csv")
 
-# Clean data
+# we clean and prepare the data before using it
 steam <- steam %>%
   filter(!is.na(positive_ratings), !is.na(price)) %>%
   mutate(
@@ -20,7 +20,7 @@ steam <- steam %>%
   ) %>%
   filter(total_ratings >= 10, release_year >= 2000, release_year <= 2024)
 
-# Split genres
+# we count the top 15 genres across all games
 genre_counts <- steam %>%
   mutate(genre = strsplit(as.character(genres), ";")) %>%
   tidyr::unnest(genre) %>%
@@ -38,6 +38,7 @@ ui <- dashboardPage(
       menuItem("About", tabName = "about", icon = icon("info-circle"))
     ),
     hr(),
+    # we add filters so the user can narrow down the games
     sliderInput("year_range", "Release Year:",
                 min = 2000, max = 2024, value = c(2010, 2024), sep = ""),
     sliderInput("price_range", "Max Price ($):",
@@ -46,6 +47,7 @@ ui <- dashboardPage(
                 min = 0, max = 100, value = 50)
   ),
   dashboardBody(
+    # we use custom CSS to match Steam's dark blue color
     tags$head(tags$style(HTML("
       .skin-black .main-header .logo { background-color: #1b2838; }
       .skin-black .main-header .navbar { background-color: #1b2838; }
@@ -59,6 +61,7 @@ ui <- dashboardPage(
       # --- OVERVIEW TAB ---
       tabItem(tabName = "overview",
               fluidRow(
+                # we show 3 summary numbers at the top
                 infoBoxOutput("total_games"),
                 infoBoxOutput("avg_price"),
                 infoBoxOutput("avg_rating")
@@ -122,7 +125,7 @@ ui <- dashboardPage(
 # ---- SERVER ----
 server <- function(input, output, session) {
   
-  # Filtered data
+  # we filter the data based on what the user selected
   filtered <- reactive({
     steam %>%
       filter(
@@ -133,7 +136,7 @@ server <- function(input, output, session) {
       )
   })
   
-  # Info boxes
+  # we display total game count, average price, and average rating
   output$total_games <- renderInfoBox({
     infoBox("Total Games", nrow(filtered()), icon = icon("gamepad"), color = "blue")
   })
@@ -146,7 +149,7 @@ server <- function(input, output, session) {
             icon = icon("star"), color = "yellow")
   })
   
-  # Releases per year
+  # we plot how many games were released each year
   output$releases_chart <- renderPlotly({
     d <- filtered() %>% count(release_year)
     plot_ly(d, x = ~release_year, y = ~n, type = "bar",
@@ -155,7 +158,7 @@ server <- function(input, output, session) {
              plot_bgcolor = "white", paper_bgcolor = "white")
   })
   
-  # Genre chart
+  # we plot the top 15 genres as a horizontal bar chart
   output$genre_chart <- renderPlotly({
     plot_ly(genre_counts, x = ~n, y = ~reorder(genre, n), type = "bar",
             orientation = "h", marker = list(color = "#ef476f")) %>%
@@ -163,7 +166,7 @@ server <- function(input, output, session) {
              plot_bgcolor = "white", paper_bgcolor = "white")
   })
   
-  # Scatter
+  # we scatter plot price vs rating (sample 500 points so it loads fast)
   output$scatter_chart <- renderPlotly({
     d <- filtered() %>% filter(price > 0) %>% sample_n(min(500, nrow(.)))
     plot_ly(d, x = ~price, y = ~rating_pct, type = "scatter", mode = "markers",
@@ -173,7 +176,7 @@ server <- function(input, output, session) {
              plot_bgcolor = "white", paper_bgcolor = "white")
   })
   
-  # Price histogram
+  # we show how prices are distributed with a histogram
   output$price_hist <- renderPlotly({
     d <- filtered() %>% filter(price > 0, price <= 60)
     plot_ly(d, x = ~price, type = "histogram", nbinsx = 30,
@@ -182,7 +185,7 @@ server <- function(input, output, session) {
              plot_bgcolor = "white", paper_bgcolor = "white")
   })
   
-  # Game table
+  # we build the interactive game table
   output$game_table <- renderDT({
     filtered() %>%
       select(name, release_year, price, rating_pct, total_ratings) %>%
@@ -192,7 +195,7 @@ server <- function(input, output, session) {
                 options = list(pageLength = 10, scrollX = TRUE))
   })
   
-  # Game detail on row click
+  # we show the details of whichever game the user clicked
   output$game_detail <- renderUI({
     req(input$game_table_rows_selected)
     row <- filtered()[input$game_table_rows_selected, ]
